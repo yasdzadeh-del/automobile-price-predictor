@@ -23,6 +23,7 @@ settings:
 jobs:
   prep_data:
     type: command
+    display_name: data-preparation
     code: ../../../data-science/src
     command: python prep.py --raw_data ${{inputs.raw_data}} --train_data ${{outputs.train_data}} --test_data ${{outputs.test_data}}
     environment: azureml:used-cars-train-env@latest
@@ -34,15 +35,16 @@ jobs:
 
   sweep_step:
     type: sweep
+    display_name: price-hyperparameter-sweep
     inputs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
       test_data: ${{parent.jobs.prep_data.outputs.test_data}}
     outputs:
-      model_output: ${{parent.outputs.model_info_output_path}}
+      model_output:
+        type: mlflow_model
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
-      # Simplified command referencing inputs directly
       command: >-
         python train.py 
         --train_data ${{inputs.train_data}} 
@@ -51,11 +53,6 @@ jobs:
         --max_depth ${{search_space.max_depth}} 
         --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
-      inputs:
-        train_data: ${{sweep_step.inputs.train_data}}
-        test_data: ${{sweep_step.inputs.test_data}}
-      outputs:
-        model_output: ${{sweep_step.outputs.model_output}}
     search_space:
       n_estimators:
         type: choice
@@ -73,10 +70,11 @@ jobs:
 
   register_model:
     type: command
+    display_name: model-registration
     code: ../../../data-science/src
     command: python register.py --model_name "used_cars_model" --model_path ${{inputs.model_path}} --model_info_output_path ${{outputs.model_info_output_path}}
     environment: azureml:used-cars-train-env@latest
     inputs:
-      model_path: ${{parent.outputs.model_info_output_path}}
+      model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
     outputs:
       model_info_output_path: ${{parent.outputs.model_info_output_path}}
