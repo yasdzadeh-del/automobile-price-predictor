@@ -2,7 +2,6 @@ type: pipeline
 $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
 display_name: automobile-price-prediction-pipeline
 experiment_name: automobile-price-experiment
-description: Pipeline to prepare data, sweep hyperparameters, and register the model.
 
 inputs:
   raw_data:
@@ -14,18 +13,17 @@ outputs:
     type: uri_folder 
   test_data:
     type: uri_folder 
+  # This is the "bridge" folder
   model_info_output_path:
     type: uri_folder 
 
 settings:
   default_datastore: azureml:workspaceblobstore
   default_compute: azureml:test-cluster
-  continue_on_step_failure: false
 
 jobs:
   prep_data:
     type: command
-    display_name: data-preparation
     code: ../../../data-science/src
     command: python prep.py --raw_data ${{inputs.raw_data}} --train_data ${{outputs.train_data}} --test_data ${{outputs.test_data}}
     environment: azureml:used-cars-train-env@latest
@@ -37,13 +35,11 @@ jobs:
 
   sweep_step:
     type: sweep
-    display_name: automobile-price-sweep
     inputs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
       test_data: ${{parent.jobs.prep_data.outputs.test_data}}
     outputs:
-      model_output:
-        type: mlflow_model
+      model_output: ${{parent.outputs.model_info_output_path}}
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
@@ -66,11 +62,10 @@ jobs:
 
   register_model:
     type: command
-    display_name: model-registration
     code: ../../../data-science/src
     command: python register.py --model_name "used_cars_model" --model_path ${{inputs.model_path}} --model_info_output_path ${{outputs.model_info_output_path}}
     environment: azureml:used-cars-train-env@latest
     inputs:
-      model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
+      model_path: ${{parent.outputs.model_info_output_path}}
     outputs:
       model_info_output_path: ${{parent.outputs.model_info_output_path}}
