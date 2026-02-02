@@ -9,10 +9,6 @@ inputs:
     path: azureml:used-cars-data@latest
 
 outputs:
-  train_data:
-    type: uri_folder 
-  test_data:
-    type: uri_folder 
   model_info_output_path:
     type: uri_folder 
 
@@ -23,19 +19,19 @@ settings:
 jobs:
   prep_data:
     type: command
-    display_name: data-preparation
     code: ../../../data-science/src
     command: python prep.py --raw_data ${{inputs.raw_data}} --train_data ${{outputs.train_data}} --test_data ${{outputs.test_data}}
     environment: azureml:used-cars-train-env@latest
     inputs:
       raw_data: ${{parent.inputs.raw_data}}
     outputs:
-      train_data: ${{parent.outputs.train_data}}
-      test_data: ${{parent.outputs.test_data}}
+      train_data: 
+        type: uri_folder
+      test_data: 
+        type: uri_folder
 
   sweep_step:
     type: sweep
-    display_name: price-hyperparameter-sweep
     inputs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
       test_data: ${{parent.jobs.prep_data.outputs.test_data}}
@@ -64,14 +60,14 @@ jobs:
       goal: minimize
       primary_metric: MSE
     limits:
-      max_total_trials: 20
-      max_concurrent_trials: 10
+      max_total_trials: 5 # Reduced for testing speed
+      max_concurrent_trials: 2
       timeout: 7200
 
   register_model:
     type: command
-    display_name: model-registration
     code: ../../../data-science/src
+    # CHANGED: We now pass the sweep output directly as model_path
     command: python register.py --model_name "used_cars_model" --model_path ${{inputs.model_path}} --model_info_output_path ${{outputs.model_info_output_path}}
     environment: azureml:used-cars-train-env@latest
     inputs:
