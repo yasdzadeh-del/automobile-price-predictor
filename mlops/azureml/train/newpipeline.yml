@@ -49,7 +49,6 @@ jobs:
         --max_depth ${{search_space.max_depth}} 
         --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
-      
       outputs:
         model_output: ${{sweep_step.outputs.model_output}}
     search_space:
