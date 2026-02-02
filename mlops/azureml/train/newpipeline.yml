@@ -42,6 +42,7 @@ jobs:
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
+      # Simplified command referencing inputs directly
       command: >-
         python train.py 
         --train_data ${{inputs.train_data}} 
@@ -51,16 +52,10 @@ jobs:
         --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
       inputs:
-        train_data: 
-          type: uri_folder
-          path: ${{sweep_step.inputs.train_data}}
-        test_data: 
-          type: uri_folder
-          path: ${{sweep_step.inputs.test_data}}
+        train_data: ${{sweep_step.inputs.train_data}}
+        test_data: ${{sweep_step.inputs.test_data}}
       outputs:
-        model_output: 
-          type: mlflow_model
-          path: ${{sweep_step.outputs.model_output}}
+        model_output: ${{sweep_step.outputs.model_output}}
     search_space:
       n_estimators:
         type: choice
