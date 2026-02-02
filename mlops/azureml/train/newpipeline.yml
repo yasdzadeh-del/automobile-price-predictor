@@ -49,6 +49,9 @@ jobs:
         --max_depth ${{search_space.max_depth}} 
         --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
+      
+      outputs:
+        model_output: ${{sweep_step.outputs.model_output}}
     search_space:
       n_estimators:
         type: choice
@@ -60,14 +63,13 @@ jobs:
       goal: minimize
       primary_metric: MSE
     limits:
-      max_total_trials: 5 # Reduced for testing speed
+      max_total_trials: 5
       max_concurrent_trials: 2
       timeout: 7200
 
   register_model:
     type: command
     code: ../../../data-science/src
-    # CHANGED: We now pass the sweep output directly as model_path
     command: python register.py --model_name "used_cars_model" --model_path ${{inputs.model_path}} --model_info_output_path ${{outputs.model_info_output_path}}
     environment: azureml:used-cars-train-env@latest
     inputs:
