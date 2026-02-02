@@ -14,9 +14,11 @@ def parse_args():
     '''Parse input arguments'''
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=_____, help='Name under which model will be registered')  # Hint: Specify the type for model_name (str)
-    parser.add_argument('--model_path', type=_____, help='Model directory')  # Hint: Specify the type for model_path (str)
-    parser.add_argument("--model_info_output_path", type=_____, help="Path to write model info JSON")  # Hint: Specify the type for model_info_output_path (str)
+    # Fixed: Changed _____ to str
+    parser.add_argument('--model_name', type=str, help='Name under which model will be registered')
+    parser.add_argument('--model_path', type=str, help='Model directory')
+    parser.add_argument("--model_info_output_path", type=str, help="Path to write model info JSON")
+    
     args, _ = parser.parse_known_args()
     print(f'Arguments: {args}')
 
@@ -27,14 +29,29 @@ def main(args):
 
     print("Registering ", args.model_name)
 
+    # Step 1: Load the model
+    # The sweep job outputs an MLflow model, so we point to that folder
+    model_uri = f"runs:/{mlflow.active_run().info.run_id}/model" 
+    # Or more simply, since we are passing the path from the sweep:
+    model_uri = args.model_path
 
-    # -----------  WRITE YOR CODE HERE -----------
+    # Step 2 & 3: Log and Register the model
+    # This registers the model in the Azure ML Model Registry
+    print(f"Registering model from {model_uri}")
+    model_details = mlflow.register_model(model_uri, args.model_name)
     
-    # Step 1: Load the model from the specified path using `mlflow.sklearn.load_model` for further processing.  
-    # Step 2: Log the loaded model in MLflow with the specified model name for versioning and tracking.  
-    # Step 3: Register the logged model using its URI and model name, and retrieve its registered version.  
-    # Step 4: Write model registration details, including model name and version, into a JSON file in the specified output path.  
-
+    # Step 4: Write model registration details into a JSON file
+    model_info = {
+        "model_name": args.model_name,
+        "model_version": model_details.version,
+        "model_uri": model_details.source
+    }
+    
+    output_path = os.path.join(args.model_info_output_path, "model_info.json")
+    with open(output_path, "w") as f:
+        json.dump(model_info, f)
+    
+    print(f"Model info written to {output_path}")
 
 if __name__ == "__main__":
     
@@ -43,10 +60,11 @@ if __name__ == "__main__":
     # Parse Arguments
     args = parse_args()
     
+    # Fixed: Replaced underscores with actual argument names
     lines = [
-        f"Model name: {args.________}",
-        f"Model path: {args.________}",
-        f"Model info output path: {args.________}"
+        f"Model name: {args.model_name}",
+        f"Model path: {args.model_path}",
+        f"Model info output path: {args.model_info_output_path}"
     ]
 
     for line in lines:
