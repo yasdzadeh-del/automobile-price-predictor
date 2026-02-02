@@ -13,7 +13,6 @@ outputs:
     type: uri_folder 
   test_data:
     type: uri_folder 
-  # This is the "bridge" folder
   model_info_output_path:
     type: uri_folder 
 
@@ -43,8 +42,19 @@ jobs:
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
-      command: python train.py --train_data ${{inputs.train_data}} --test_data ${{inputs.test_data}} --n_estimators ${{search_space.n_estimators}} --max_depth ${{search_space.max_depth}} --model_output ${{outputs.model_output}}
+      command: >-
+        python train.py 
+        --train_data ${{inputs.train_data}} 
+        --test_data ${{inputs.test_data}} 
+        --n_estimators ${{search_space.n_estimators}} 
+        --max_depth ${{search_space.max_depth}} 
+        --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
+      inputs:
+        train_data: ${{sweep_step.inputs.train_data}}
+        test_data: ${{sweep_step.inputs.test_data}}
+      outputs:
+        model_output: ${{sweep_step.outputs.model_output}}
     search_space:
       n_estimators:
         type: choice
