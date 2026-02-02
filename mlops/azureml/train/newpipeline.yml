@@ -46,8 +46,7 @@ jobs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
       test_data: ${{parent.jobs.prep_data.outputs.test_data}}
     outputs:
-      model_output:
-        type: mlflow_model
+      model_output: ${{parent.outputs.model_info_output_path}} # BIND DIRECTLY TO PARENT
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
@@ -80,12 +79,12 @@ jobs:
     code: ../../../data-science/src
     command: >-
       python register.py 
-      --model_name ${{inputs.model_name}} 
+      --model_name "used_cars_model"
       --model_path ${{inputs.model_path}} 
       --model_info_output_path ${{outputs.model_info_output_path}}
     environment: azureml:used-cars-train-env@latest
     inputs:
-      model_name: "used_cars_price_prediction_model"
-      model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
+      # Change this to point to the same parent output
+      model_path: ${{parent.outputs.model_info_output_path}}
     outputs:
       model_info_output_path: ${{parent.outputs.model_info_output_path}}
