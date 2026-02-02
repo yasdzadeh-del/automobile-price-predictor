@@ -27,18 +27,23 @@ def parse_args():
 def main(args):
     '''Loads the best-trained model from the sweep job and registers it'''
 
-    print("Registering ", args.model_name)
+    print(f"Registering model: {args.model_name}")
 
-    # Step 1: Load the model
-    # The sweep job outputs an MLflow model, so we point to that folder
-    model_uri = f"runs:/{mlflow.active_run().info.run_id}/model" 
-    # Or more simply, since we are passing the path from the sweep:
-    model_uri = args.model_path
+    # Step 1: Point to the model path provided by the sweep output
+    # Since the sweep output is an MLflow model, we can use the local path directly
+    # with the 'file://' prefix or just the path string in many environments.
+    model_path = args.model_path
 
-    # Step 2 & 3: Log and Register the model
-    # This registers the model in the Azure ML Model Registry
-    print(f"Registering model from {model_uri}")
-    model_details = mlflow.register_model(model_uri, args.model_name)
+    # Step 2 & 3: Register the model
+    # We use mlflow.log_artifact to ensure the model is associated with THIS run too,
+    # then register it. Or, register directly from the path:
+    print(f"Registering model from path: {model_path}")
+    
+    # Registering the model using the path provided by the pipeline binding
+    model_details = mlflow.register_model(
+        model_uri=f"file://{os.path.abspath(model_path)}", 
+        name=args.model_name
+    )
     
     # Step 4: Write model registration details into a JSON file
     model_info = {
@@ -47,29 +52,11 @@ def main(args):
         "model_uri": model_details.source
     }
     
+    # Ensure the output directory exists
+    os.makedirs(args.model_info_output_path, exist_ok=True)
+    
     output_path = os.path.join(args.model_info_output_path, "model_info.json")
     with open(output_path, "w") as f:
         json.dump(model_info, f)
     
     print(f"Model info written to {output_path}")
-
-if __name__ == "__main__":
-    
-    mlflow.start_run()
-    
-    # Parse Arguments
-    args = parse_args()
-    
-    # Fixed: Replaced underscores with actual argument names
-    lines = [
-        f"Model name: {args.model_name}",
-        f"Model path: {args.model_path}",
-        f"Model info output path: {args.model_info_output_path}"
-    ]
-
-    for line in lines:
-        print(line)
-
-    main(args)
-
-    mlflow.end_run()
