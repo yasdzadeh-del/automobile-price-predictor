@@ -55,7 +55,7 @@ jobs:
         --train_data ${{inputs.train_data}} 
         --test_data ${{inputs.test_data}} 
         --n_estimators ${{search_space.n_estimators}} 
-        --max_depth ${{search_space.max_depth}}
+        --max_depth ${{search_space.max_depth}} 
         --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
     search_space:
