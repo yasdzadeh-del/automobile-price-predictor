@@ -41,8 +41,8 @@ jobs:
       test_data: ${{parent.outputs.test_data}}
 
   sweep_step:
-    name: automobile_price_sweep
-    display_name: hyperparameter-sweep-job
+    name: hyperparameter_sweep
+    display_name: automobile-price-sweep
     type: sweep
     inputs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
@@ -50,8 +50,17 @@ jobs:
     outputs:
       model_output:
         type: mlflow_model
-    sampling_algorithm: random 
-    trial: ./train.yml 
+    sampling_algorithm: random
+    # Fix: Define the trial inline instead of referencing train.yml
+    trial:
+      code: ../../../data-science/src
+      command: >-
+        python train.py 
+        --train_data ${{inputs.train_data}} 
+        --test_data ${{inputs.test_data}} 
+        --n_estimators ${{search_space.n_estimators}} 
+        --max_depth ${{search_space.max_depth}}
+      environment: azureml:used-cars-train-env@latest
     search_space:
       n_estimators:
         type: choice
