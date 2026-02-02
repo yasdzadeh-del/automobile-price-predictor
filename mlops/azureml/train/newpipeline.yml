@@ -1,29 +1,29 @@
-    $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
-    type: pipeline
-    display_name: automobile-price-prediction-pipeline
-    experiment_name: automobile-price-experiment
-    description: Pipeline to prepare data, sweep hyperparameters, and register the model.
+type: pipeline
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+display_name: automobile-price-prediction-pipeline
+experiment_name: automobile-price-experiment
+description: Pipeline to prepare data, sweep hyperparameters, and register the model.
 
-    inputs:
-    raw_data:
+inputs:
+  raw_data:
     type: uri_file
     path: azureml:used-cars-data@latest
 
-    outputs:
-    train_data:
+outputs:
+  train_data:
     type: uri_folder 
-    test_data:
+  test_data:
     type: uri_folder 
-    model_info_output_path:
+  model_info_output_path:
     type: uri_folder 
 
-    settings:
-    default_datastore: azureml:workspaceblobstore
-    default_compute: azureml:test-cluster
-    continue_on_step_failure: false
+settings:
+  default_datastore: azureml:workspaceblobstore
+  default_compute: azureml:test-cluster
+  continue_on_step_failure: false
 
-    jobs:
-    prep_data:
+jobs:
+  prep_data:
     type: command
     display_name: data-preparation
     code: ../../../data-science/src
@@ -35,7 +35,7 @@
       train_data: ${{parent.outputs.train_data}}
       test_data: ${{parent.outputs.test_data}}
 
-    sweep_step:
+  sweep_step:
     type: sweep
     display_name: automobile-price-sweep
     inputs:
@@ -64,7 +64,7 @@
       max_concurrent_trials: 10
       timeout: 7200
 
-    register_model:
+  register_model:
     type: command
     display_name: model-registration
     code: ../../../data-science/src
