@@ -10,7 +10,6 @@ inputs:
     path: azureml:used-cars-data@latest
 
 outputs:
-  # Standard intermediate data types
   train_data:
     type: uri_folder 
   test_data:
@@ -51,7 +50,6 @@ jobs:
       model_output:
         type: mlflow_model
     sampling_algorithm: random
-    # Fix: Define the trial inline instead of referencing train.yml
     trial:
       code: ../../../data-science/src
       command: >-
@@ -59,7 +57,8 @@ jobs:
         --train_data ${{inputs.train_data}} 
         --test_data ${{inputs.test_data}} 
         --n_estimators ${{search_space.n_estimators}} 
-        --max_depth ${{search_space.max_depth}}
+        --max_depth ${{search_space.max_depth}} 
+        --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
     search_space:
       n_estimators:
@@ -88,6 +87,7 @@ jobs:
     environment: azureml:used-cars-train-env@latest
     inputs:
       model_name: "used_cars_price_prediction_model"
+      # This binding is now correctly linked to the sweep output
       model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
     outputs:
       model_info_output_path: ${{parent.outputs.model_info_output_path}}
