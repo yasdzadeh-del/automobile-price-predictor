@@ -10,7 +10,7 @@ inputs:
     path: azureml:used-cars-data@latest
 
 outputs:
-  # 'uri_folder' is the standard for intermediate data in Azure ML v2
+  # Standard intermediate data types
   train_data:
     type: uri_folder 
   test_data:
@@ -41,8 +41,8 @@ jobs:
       test_data: ${{parent.outputs.test_data}}
 
   sweep_step:
-    name: hyperparameter_sweep
-    display_name: sweep-max-depth
+    name: automobile_price_sweep
+    display_name: hyperparameter-sweep-job
     type: sweep
     inputs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
@@ -50,14 +50,14 @@ jobs:
     outputs:
       model_output:
         type: mlflow_model
-    sampling_algorithm: random # Options: random, grid, bayesian
+    sampling_algorithm: random 
     trial: ./train.yml 
     search_space:
       n_estimators:
         type: choice
         values: [10, 20, 30, 50]
       max_depth:
-        type: choice  # Using 'choice' for a discrete set of values
+        type: choice
         values: [3, 5, 8, 10]
     objective:
       goal: minimize
@@ -81,52 +81,5 @@ jobs:
       model_name: "used_cars_price_prediction_model"
       model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
     outputs:
-      model_info_output_path: ${{parent.outputs.model_info_output_path}}
-    outputs:
-      train_data: ${{parent.outputs.train_data}}
-      test_data: ${{parent.outputs.test_data}}
-
-  sweep_step:
-    name: _______
-    display_name: ________-______  # Hint: Provide the display name for the job
-    type: sweep
-    inputs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
-      test_data: ${{parent.jobs.prep_data.outputs.test_data}}
-    outputs:
-      model_output:
-        type: mlflow_model
-    sampling_algorithm: ______  # Specify the sampling algorithm
-    trial: ./train.yml  # Refers to a separate command component
-    search_space:
-      n_estimators:
-        type: choice
-        values: [10, 20, 30, 50]
-      max_depth:
-        type: _______  # Specify the type for max_depth
-        values: _______  # Provide the values for max_depth
-    objective:
-      goal: minimize
-      primary_metric: MSE
-    limits:
-      max_total_trials: 20
-      max_concurrent_trials: 10
-      timeout: 7200
-
-
-  register_model:
-    name: _________  # Provide the job name
-    display_name: ________-_______  # Provide the display name for the job
-    code: ../../../data-science/src
-    command: >-
-      python register.py 
-      --model_name ${{inputs.model_name}} 
-      --model_path ${{inputs.model_path}} 
-      --model_info_output_path ${{outputs.model_info_output_path}}
-    environment: azureml:used-cars-train-env@latest
-    inputs:
-      model_name: "used_cars_price_prediction_model"
-      model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
-    outputs:
       model_info_output_path: ${{parent.outputs.model_info_output_path}}
-
