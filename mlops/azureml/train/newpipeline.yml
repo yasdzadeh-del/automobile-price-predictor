@@ -37,7 +37,7 @@ jobs:
       test_data: ${{parent.jobs.prep_data.outputs.test_data}}
     outputs:
       model_output:
-        type: mlflow_model
+        type: uri_folder  # CHANGED: 'mlflow_model' -> 'uri_folder' to fix binding error
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
