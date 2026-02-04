@@ -3,14 +3,13 @@ $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
 display_name: automobile-price-prediction-pipeline
 experiment_name: automobile-price-experiment
 
+outputs:
+  final_model_output: ${{parent.jobs.sweep_step.outputs.model_output}}
+
 inputs:
   raw_data:
     type: uri_file
     path: azureml:used-cars-data@latest
-
-outputs:
-  final_model_output:
-    type: mlflow_model
 
 settings:
   default_datastore: azureml:workspaceblobstore
@@ -40,11 +39,11 @@ jobs:
       train_data: ${{parent.jobs.prep_data.outputs.train_data}}
       test_data: ${{parent.jobs.prep_data.outputs.test_data}}
     outputs:
-      model_output: ${{parent.outputs.final_model_output}}
+      model_output:
+        type: mlflow_model
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
-      # The command below now correctly references the search_space and inputs defined above
       command: >-
         python train.py 
         --train_data ${{inputs.train_data}} 
