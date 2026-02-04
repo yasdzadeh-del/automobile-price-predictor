@@ -20,7 +20,11 @@ jobs:
   prep_data:
     type: command
     code: ../../../data-science/src
-    command: python prep.py --raw_data ${{inputs.raw_data}} --train_data ${{outputs.train_data}} --test_data ${{outputs.test_data}}
+    command: >-
+      python prep.py 
+      --raw_data ${{inputs.raw_data}} 
+      --train_data ${{outputs.train_data}} 
+      --test_data ${{outputs.test_data}}
     environment: azureml:used-cars-train-env@latest
     inputs:
       raw_data: ${{parent.inputs.raw_data}}
@@ -40,6 +44,7 @@ jobs:
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
+      # The command below now correctly references the search_space and inputs defined above
       command: >-
         python train.py 
         --train_data ${{inputs.train_data}} 
@@ -68,4 +73,4 @@ jobs:
     command: python register.py --model_name "used_cars_model" --model_path ${{inputs.model_path}}
     environment: azureml:used-cars-train-env@latest
     inputs:
-      model_path: ${{parent.outputs.final_model_output}}
+      model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
