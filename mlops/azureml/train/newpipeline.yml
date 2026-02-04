@@ -3,9 +3,6 @@ $schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
 display_name: automobile-price-prediction-pipeline
 experiment_name: automobile-price-experiment
 
-outputs:
-  final_model_output: ${{parent.jobs.sweep_step.outputs.model_output}}
-
 inputs:
   raw_data:
     type: uri_file
