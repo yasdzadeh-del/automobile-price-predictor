@@ -16,7 +16,11 @@ jobs:
   prep_data:
     type: command
     code: ../../../data-science/src
-    command: python prep.py --raw_data ${{inputs.raw_data}} --train_data ${{outputs.train_data}} --test_data ${{outputs.test_data}}
+    command: >-
+      python prep.py 
+      --raw_data ${{inputs.raw_data}} 
+      --train_data ${{outputs.train_data}} 
+      --test_data ${{outputs.test_data}}
     environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest
     inputs:
       raw_data: ${{parent.inputs.raw_data}}
@@ -35,7 +39,7 @@ jobs:
       model_output:
         type: uri_folder
     sampling_algorithm: random
-    trial: ./train.yml
+    trial: ./train.yml  
     search_space:
       n_estimators:
         type: choice
@@ -53,7 +57,10 @@ jobs:
   register_model:
     type: command
     code: ../../../data-science/src
-    command: python register.py --model_name "used_cars_model" --model_path ${{inputs.model_path}}
-    environment: azureml:used-cars-train-env@latest
+    command: >-
+      python register.py 
+      --model_name "used_cars_model" 
+      --model_path ${{inputs.model_path}}
+    environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest
     inputs:
       model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
