@@ -16,26 +16,28 @@ def parse_args():
 
 def main(args):
     print(f"Registering model: {args.model_name}")
+    print(f"Searching for MLmodel in: {args.model_path}")
 
-    # Step 1: Search for the MLmodel file recursively
-    # This bypasses the broken ${{name}} path by searching for the file itself
-    search_pattern = os.path.join(args.model_path, "**", "MLmodel")
-    mlmodel_files = glob.glob(search_pattern, recursive=True)
+    model_abs_path = None
 
-    if not mlmodel_files:
-        # Debugging: if it fails, this will show us what Azure actually sent
-        print(f"Current directory structure of {args.model_path}:")
+    # Step 1: Manually walk through the directory to find MLmodel
+    for root, dirs, files in os.walk(args.model_path):
+        if "MLmodel" in files:
+            model_abs_path = root
+            print(f"Found MLmodel at: {model_abs_path}")
+            break
+
+    if not model_abs_path:
+        # This will help us see EXACTLY what is in there if it fails
+        print("Directory content listing:")
         for root, dirs, files in os.walk(args.model_path):
-            print(f"  {root}: {files}")
+            print(f"Path: {root} | Files: {files}")
         raise FileNotFoundError(f"Could not find MLmodel file in {args.model_path}")
 
-    # Use the first MLmodel file found (the best trial output)
-    model_abs_path = os.path.dirname(mlmodel_files[0])
     model_uri = f"file://{model_abs_path}"
-
-    print(f"Registering model from URI: {model_uri}")
     
     # Step 2 & 3: Register the model
+    print(f"Registering model from URI: {model_uri}")
     model_details = mlflow.register_model(
         model_uri=model_uri, 
         name=args.model_name
