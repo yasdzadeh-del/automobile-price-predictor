@@ -49,12 +49,8 @@ def main(args):
     print(f"MSE: {mse}")
 
     # Step 6: Save the model
-    # Clean up existing directory to prevent mlflow.save_model errors
-    if os.path.exists(args.model_output):
-        shutil.rmtree(args.model_output)
+    os.makedirs(args.model_output, exist_ok=True)
     
+    # We save directly to the output path provided by the sweep trial
     mlflow.sklearn.save_model(sk_model=regressor, path=args.model_output)
-
-if __name__ == "__main__":
-    args = parse_args()
-    main(args)
+    print(f"Model saved to {args.model_output}")

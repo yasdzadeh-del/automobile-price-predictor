@@ -17,12 +17,15 @@ def main(args):
     print(f"Registering model: {args.model_name}")
 
     # Step 1: Format the path for MLflow
-    # Ensure it's an absolute path and add the 'file://' prefix required for local folder registration
     model_abs_path = os.path.abspath(args.model_path)
     
-    # Validation: Check if the MLmodel file exists in the folder
+    # Check if MLmodel is here, or in a 'model' subfolder (common in sweeps)
     if not os.path.exists(os.path.join(model_abs_path, "MLmodel")):
-        raise FileNotFoundError(f"No MLmodel file found at {model_abs_path}. Check if train.py saved it correctly.")
+        potential_subfolder = os.path.join(model_abs_path, "model")
+        if os.path.exists(os.path.join(potential_subfolder, "MLmodel")):
+            model_abs_path = potential_subfolder
+        else:
+            raise FileNotFoundError(f"No MLmodel file found at {model_abs_path} or subfolders.")
 
     model_uri = f"file://{model_abs_path}"
 
