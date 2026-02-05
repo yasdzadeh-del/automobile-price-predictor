@@ -16,18 +16,30 @@ def parse_args():
 def main(args):
     print(f"Registering model: {args.model_name}")
 
-    # Step 1: Format the path for MLflow
-    model_abs_path = os.path.abspath(args.model_path)
-    
-    # Check if MLmodel is here, or in a 'model' subfolder (common in sweeps)
-    if not os.path.exists(os.path.join(model_abs_path, "MLmodel")):
-        potential_subfolder = os.path.join(model_abs_path, "model")
-        if os.path.exists(os.path.join(potential_subfolder, "MLmodel")):
-            model_abs_path = potential_subfolder
-        else:
-            raise FileNotFoundError(f"No MLmodel file found at {model_abs_path} or subfolders.")
+    import glob
 
+def main(args):
+    print(f"Registering model: {args.model_name}")
+
+    # Step 1: Search for the MLmodel file recursively
+    # This bypasses the broken ${{name}} path by looking for the actual file
+    search_pattern = os.path.join(args.model_path, "**", "MLmodel")
+    mlmodel_files = glob.glob(search_pattern, recursive=True)
+
+    if not mlmodel_files:
+        # Fallback: list everything to help debug if it fails again
+        print(f"Current directory structure of {args.model_path}:")
+        for root, dirs, files in os.walk(args.model_path):
+            print(f"  {root}: {files}")
+        raise FileNotFoundError(f"Could not find MLmodel file in {args.model_path}")
+
+    # Use the first MLmodel file found (usually there's only one from the best trial)
+    model_abs_path = os.path.dirname(mlmodel_files[0])
     model_uri = f"file://{model_abs_path}"
+
+    print(f"Registering model from URI: {model_uri}")
+    
+    # ... rest of your mlflow.register_model code ...
 
     # Step 2 & 3: Register the model
     print(f"Registering model from URI: {model_uri}")
