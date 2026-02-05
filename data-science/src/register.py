@@ -3,7 +3,7 @@ from pathlib import Path
 import mlflow
 import os 
 import json
-import glob  # Moved to the top
+import glob
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -16,27 +16,49 @@ def parse_args():
 
 def main(args):
     print(f"Registering model: {args.model_name}")
-    print(f"Searching for MLmodel in: {args.model_path}")
+    
+    # Force Python to handle the path as a normalized string
+    base_search_path = os.path.normpath(args.model_path)
+    print(f"Target search path: {base_search_path}")
 
     model_abs_path = None
 
-    # Step 1: Manually walk through the directory to find MLmodel
-    for root, dirs, files in os.walk(args.model_path):
-        if "MLmodel" in files:
-            model_abs_path = root
-            print(f"Found MLmodel at: {model_abs_path}")
+    # Step 1: Broad Search
+    # We check the provided path, the parent, and the current working directory
+    search_locations = [base_search_path, os.path.dirname(base_search_path), os.getcwd()]
+    
+    for location in search_locations:
+        if os.path.exists(location):
+            print(f"Checking location: {location}")
+            for root, dirs, files in os.walk(location):
+                if "MLmodel" in files:
+                    model_abs_path = root
+                    print(f"Found MLmodel at: {model_abs_path}")
+                    break
+        if model_abs_path:
             break
 
+    # Step 2: The "Hail Mary" Search
+    # If still not found, search the entire Azure ML mount drive
     if not model_abs_path:
-        # This will help us see EXACTLY what is in there if it fails
-        print("Directory content listing:")
-        for root, dirs, files in os.walk(args.model_path):
-            print(f"Path: {root} | Files: {files}")
-        raise FileNotFoundError(f"Could not find MLmodel file in {args.model_path}")
+        print("!!! Model not found in primary paths. Scanning /mnt/azureml/ !!!")
+        for root, dirs, files in os.walk("/mnt/azureml/"):
+            if "MLmodel" in files:
+                model_abs_path = root
+                print(f"FOUND IT AT MOUNT PATH: {model_abs_path}")
+                break
+    
+    # Final Validation
+    if not model_abs_path:
+        # Final debug listing to see what the container actually sees
+        print("Directory content listing of base path:")
+        for root, dirs, files in os.walk(base_search_path):
+             print(f"Path: {root} | Files: {files}")
+        raise FileNotFoundError(f"Could not find MLmodel file anywhere in /mnt/azureml/ for path {args.model_path}")
 
     model_uri = f"file://{model_abs_path}"
     
-    # Step 2 & 3: Register the model
+    # Step 3: Register the model
     print(f"Registering model from URI: {model_uri}")
     model_details = mlflow.register_model(
         model_uri=model_uri, 
