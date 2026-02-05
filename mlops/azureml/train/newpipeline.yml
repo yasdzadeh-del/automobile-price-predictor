@@ -37,7 +37,7 @@ jobs:
     sampling_algorithm: random
     trial:
       code: ../../../data-science/src
-      command: python train.py --train_data ${{parent.jobs.prep_data.outputs.train_data}} --test_data ${{parent.jobs.prep_data.outputs.test_data}} --n_estimators ${{search_space.n_estimators}} --max_depth ${{search_space.max_depth}} --model_output ${{outputs.model_output}}
+      command: python train.py --train_data ${{inputs.train_data}} --test_data ${{inputs.test_data}} --n_estimators ${{search_space.n_estimators}} --max_depth ${{search_space.max_depth}} --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
       outputs:
         model_output:
