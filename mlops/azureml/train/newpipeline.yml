@@ -60,7 +60,7 @@ jobs:
     command: >-
       python register.py 
       --model_name "used_cars_model" 
-      --model_path ${{inputs.model_path}}
+      --model_path '${{inputs.model_path}}'
     environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest
     inputs:
       model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
