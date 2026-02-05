@@ -16,11 +16,7 @@ jobs:
   prep_data:
     type: command
     code: ../../../data-science/src
-    command: >-
-      python prep.py 
-      --raw_data ${{inputs.raw_data}} 
-      --train_data ${{outputs.train_data}} 
-      --test_data ${{outputs.test_data}}
+    command: python prep.py --raw_data ${{inputs.raw_data}} --train_data ${{outputs.train_data}} --test_data ${{outputs.test_data}}
     environment: azureml:used-cars-train-env@latest
     inputs:
       raw_data: ${{parent.inputs.raw_data}}
