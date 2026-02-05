@@ -49,6 +49,9 @@ jobs:
         --max_depth ${{search_space.max_depth}} 
         --model_output ${{outputs.model_output}}
       environment: azureml:used-cars-train-env@latest
+      outputs:
+        model_output:
+          type: uri_folder
     search_space:
       n_estimators:
         type: choice
