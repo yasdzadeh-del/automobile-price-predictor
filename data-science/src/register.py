@@ -8,7 +8,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', type=str, help='Name under which model will be registered')
     parser.add_argument('--model_path', type=str, help='Model directory from sweep output')
-    # Made this optional to prevent errors if not defined in YAML
     parser.add_argument("--model_info_output_path", type=str, default=None, help="Path to write model info JSON")
     
     args, _ = parser.parse_known_args()
@@ -17,19 +16,26 @@ def parse_args():
 def main(args):
     print(f"Registering model: {args.model_name}")
 
-    # Step 1: Use the path directly
-    # MLflow register_model accepts a local path string without the file:// prefix
-    model_local_path = os.path.abspath(args.model_path)
+    # Step 1: Format the path for MLflow
+    # Ensure it's an absolute path and add the 'file://' prefix required for local folder registration
+    model_abs_path = os.path.abspath(args.model_path)
+    
+    # Validation: Check if the MLmodel file exists in the folder
+    if not os.path.exists(os.path.join(model_abs_path, "MLmodel")):
+        raise FileNotFoundError(f"No MLmodel file found at {model_abs_path}. Check if train.py saved it correctly.")
+
+    model_uri = f"file://{model_abs_path}"
 
     # Step 2 & 3: Register the model
-    print(f"Registering model from path: {model_local_path}")
+    print(f"Registering model from URI: {model_uri}")
     
+    # MLflow in Azure ML automatically uses the workspace's registry
     model_details = mlflow.register_model(
-        model_uri=model_local_path, 
+        model_uri=model_uri, 
         name=args.model_name
     )
     
-    # Step 4: Write model info ONLY if a path was provided in the pipeline
+    # Step 4: Write model info ONLY if a path was provided
     if args.model_info_output_path:
         model_info = {
             "model_name": args.model_name,
@@ -46,7 +52,7 @@ def main(args):
     print(f"Successfully registered version {model_details.version}")
 
 if __name__ == "__main__":
-    # Using 'with' handles the mlflow.end_run() automatically even if code fails
+    # We use the active run context to link the registration to the pipeline run
     with mlflow.start_run():
         args = parse_args()
         main(args)
