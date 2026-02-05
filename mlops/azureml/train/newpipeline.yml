@@ -6,7 +6,7 @@ experiment_name: automobile-price-experiment
 inputs:
   raw_data:
     type: uri_file
-    path: azureml:used-cars-data@latest
+    path: azureml:used-cars-data@latest  
 
 settings:
   default_datastore: azureml:workspaceblobstore
