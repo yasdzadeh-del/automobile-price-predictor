@@ -3,6 +3,7 @@ from pathlib import Path
 import mlflow
 import os 
 import json
+import glob  # Moved to the top
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -16,35 +17,25 @@ def parse_args():
 def main(args):
     print(f"Registering model: {args.model_name}")
 
-    import glob
-
-def main(args):
-    print(f"Registering model: {args.model_name}")
-
     # Step 1: Search for the MLmodel file recursively
-    # This bypasses the broken ${{name}} path by looking for the actual file
+    # This bypasses the broken ${{name}} path by searching for the file itself
     search_pattern = os.path.join(args.model_path, "**", "MLmodel")
     mlmodel_files = glob.glob(search_pattern, recursive=True)
 
     if not mlmodel_files:
-        # Fallback: list everything to help debug if it fails again
+        # Debugging: if it fails, this will show us what Azure actually sent
         print(f"Current directory structure of {args.model_path}:")
         for root, dirs, files in os.walk(args.model_path):
             print(f"  {root}: {files}")
         raise FileNotFoundError(f"Could not find MLmodel file in {args.model_path}")
 
-    # Use the first MLmodel file found (usually there's only one from the best trial)
+    # Use the first MLmodel file found (the best trial output)
     model_abs_path = os.path.dirname(mlmodel_files[0])
     model_uri = f"file://{model_abs_path}"
 
     print(f"Registering model from URI: {model_uri}")
     
-    # ... rest of your mlflow.register_model code ...
-
     # Step 2 & 3: Register the model
-    print(f"Registering model from URI: {model_uri}")
-    
-    # MLflow in Azure ML automatically uses the workspace's registry
     model_details = mlflow.register_model(
         model_uri=model_uri, 
         name=args.model_name
@@ -67,7 +58,6 @@ def main(args):
     print(f"Successfully registered version {model_details.version}")
 
 if __name__ == "__main__":
-    # We use the active run context to link the registration to the pipeline run
     with mlflow.start_run():
         args = parse_args()
         main(args)
